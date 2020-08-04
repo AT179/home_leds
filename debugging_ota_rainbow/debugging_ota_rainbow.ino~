@@ -91,13 +91,6 @@ uint8_t deltahue = 10;
 // TODO: add the other effects (candycane, noise, twinke...) if I want
 // them later
 
-
-int * successfulReturnFlag;
-// void callback(char* topic, byte* payload, unsigned int length)
-char * callbackTopic;
-byte * callbackPayload;
-unsigned int callbackLength;
-
 /*********************** SETUP (CONNECT TO EVERYTHING) ************************/
 void setup() {
   Serial.begin(115200);
@@ -159,32 +152,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
-
-
-	/* int * successfulReturnFlag; */
-	/* // void callback(char* topic, byte* payload, unsigned int length) */
-	/* char * callbackTopic; */
-	/* byte * callbackPayload; */
-	/* unsigned int callbackLength; */
-	
-	successfulReturnFlag = 0;
-
-	StaticJsonDocument<capacity> doc;
-  DeserializationError err = deserializeJson(doc, payload, length);
-  if (err){
-    Serial.print("ERROR: ");
-    Serial.println(err.c_str());
-    return;
-  } else {
-		// Sucessful return
-
-		callbackTopic = topic;
-		callbackPayload = payload;
-		callbackLength = length;
-		
-		successfulReturnFlag = 1;
-		return;
-	}
 
   if(!processJson(payload, length)) {
     return;
@@ -262,6 +229,22 @@ bool processJson(byte* payload, unsigned int length) {
 
 
 void sendState() {
+  // // Bruh's send state
+  // StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
+  // JsonObject& root = jsonBuffer.createObject();
+  // root["state"] = (stateOn) ? on_cmd : off_cmd;
+  // color["r"] = red;
+  // color["g"] = green;
+  // color["b"] = blue;
+  // root["brightness"] = brightness;
+  // root["effect"] = effectString.c_str();
+
+  // char buffer[root.measureLength() + 1];
+  // root.printTo(buffer, sizeof(buffer));
+  // client.publish(lightStateTopic, buffer, true);
+
+
+  // my send state
   /************************************ SEND ************************************/
   // Now that I've checked for a state I can send a response
   // This also should be in it's own function
@@ -339,10 +322,6 @@ void loop() {
   
   client.loop();
   ArduinoOTA.handle();
-
-	if(successfulReturnFlag) {
-		processJson(callBackPayload, callbackLength);
-	}
 
   // EFFECTS INFO HERE
 
