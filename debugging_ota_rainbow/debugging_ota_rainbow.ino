@@ -92,11 +92,12 @@ uint8_t deltahue = 10;
 // them later
 
 
-int * successfulReturnFlag;
+int successfulReturnFlag;
 // void callback(char* topic, byte* payload, unsigned int length)
 char * callbackTopic;
 byte * callbackPayload;
 unsigned int callbackLength;
+StaticJsonDocument<capacity> doc;
 
 /*********************** SETUP (CONNECT TO EVERYTHING) ************************/
 void setup() {
@@ -169,10 +170,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
 	
 	successfulReturnFlag = 0;
 
-	StaticJsonDocument<capacity> doc;
+	// StaticJsonDocument<capacity> doc;
   DeserializationError err = deserializeJson(doc, payload, length);
   if (err){
-    Serial.print("ERROR: ");
+    Serial.print("ERROR IN CALLBACK: ");
     Serial.println(err.c_str());
     return;
   } else {
@@ -186,34 +187,35 @@ void callback(char* topic, byte* payload, unsigned int length) {
 		return;
 	}
 
-  if(!processJson(payload, length)) {
-    return;
-  }
-  if(stateOn) {
-    realRed = map(red, 0, 255, 0, brightness);
-    realGreen = map(green, 0, 255, 0, brightness);
-    realBlue = map(blue, 0, 255, 0, brightness);
-  } else {
-    realRed = 0;
-    realGreen = 0;
-    realBlue = 0;
-  }
-  Serial.println(effect);
-  // startFade = true;
-  // inFade = false;     // kill current fade
-
-  sendState();
+//  if(!processJson(payload, length)) {
+//    return;
+//  }
+//  if(stateOn) {
+//    realRed = map(red, 0, 255, 0, brightness);
+//    realGreen = map(green, 0, 255, 0, brightness);
+//    realBlue = map(blue, 0, 255, 0, brightness);
+//  } else {
+//    realRed = 0;
+//    realGreen = 0;
+//    realBlue = 0;
+//  }
+//  Serial.println(effect);
+//  // startFade = true;
+//  // inFade = false;     // kill current fade
+//
+//  sendState();
 }
 
 
-bool processJson(byte* payload, unsigned int length) {
-  StaticJsonDocument<capacity> doc;
-  DeserializationError err = deserializeJson(doc, payload, length);
-  if (err){
-    Serial.print("ERROR: ");
-    Serial.println(err.c_str());
-    return false;
-  }
+// bool processJson(byte* payload, unsigned int length) {
+bool processJson() {
+  // StaticJsonDocument<capacity> doc;
+  // DeserializationError err = deserializeJson(doc, callbackPayload, callbackLength);
+  // if (err){
+    // Serial.print("ERROR IN PROCESS JSON: ");
+    // Serial.println(err.c_str());
+    // return false;
+  // }
   
   JsonObject root = doc.as<JsonObject>();
   
@@ -341,7 +343,7 @@ void loop() {
   ArduinoOTA.handle();
 
 	if(successfulReturnFlag) {
-		processJson(callBackPayload, callbackLength);
+		processJson();
 	}
 
   // EFFECTS INFO HERE

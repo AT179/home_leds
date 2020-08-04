@@ -1,0 +1,7 @@
+Exception 9: LoadStoreAlignmentCause: Load or store to an unaligned address
+PC: 0x4020f3b5: PubSubClient::connected() at C:\Users\atruc\Documents\Arduino\libraries\PubSubClient\src\PubSubClient.cpp line 606
+EXCVADDR: 0x3f001be3
+
+Decoding stack results
+0x4020338f: loop() at C:\Users\atruc\Documents\Arduino\debugging_ota_rainbow/debugging_ota_rainbow.ino line 333
+0x4020d9b4: loop_wrapper() at C:\Users\atruc\AppData\Local\Arduino15\packages\esp8266\hardware\esp8266\2.6.3\cores\esp8266\core_esp8266_main.cpp line 180
