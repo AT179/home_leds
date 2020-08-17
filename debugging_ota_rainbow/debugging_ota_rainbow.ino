@@ -54,7 +54,8 @@ const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 const int capacity = 256;
 
 // FastLED Definitions
-#define NUM_LEDS 76    // TODO: numleds changes from deivce to device
+// #define NUM_LEDS 76    // TODO: numleds changes from deivce to device
+#define NUM_LEDS 50
 #define DATA_PIN 5
 #define CHIPSET WS2812B
 #define COLOR_ORDER GRB
@@ -84,13 +85,12 @@ float rgbArray[3] {255, 0, 0};
 int rainbowCycleLEDWrite;
 
 /**************************** GLOBALS FOR EFFECTS *****************************/
-// rainbow
-uint8_t thishue = 0;
-uint8_t deltahue = 10;
+/* // rainbow */
+/* uint8_t thishue = 0; */
+/* uint8_t deltahue = 10; */
 
 // TODO: add the other effects (candycane, noise, twinke...) if I want
 // them later
-
 
 int successfulReturnFlag;
 // void callback(char* topic, byte* payload, unsigned int length)
@@ -98,6 +98,7 @@ char * callbackTopic;
 byte * callbackPayload;
 unsigned int callbackLength;
 StaticJsonDocument<capacity> doc;
+int debugCtr = 0;
 
 /*********************** SETUP (CONNECT TO EVERYTHING) ************************/
 void setup() {
@@ -159,15 +160,8 @@ void setupWifi() {
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
-  Serial.print("] ");
+  Serial.println("] ");
 
-
-	/* int * successfulReturnFlag; */
-	/* // void callback(char* topic, byte* payload, unsigned int length) */
-	/* char * callbackTopic; */
-	/* byte * callbackPayload; */
-	/* unsigned int callbackLength; */
-	
 	successfulReturnFlag = 0;
 
 	// StaticJsonDocument<capacity> doc;
@@ -186,43 +180,18 @@ void callback(char* topic, byte* payload, unsigned int length) {
 		successfulReturnFlag = 1;
 		return;
 	}
-
-//  if(!processJson(payload, length)) {
-//    return;
-//  }
-//  if(stateOn) {
-//    realRed = map(red, 0, 255, 0, brightness);
-//    realGreen = map(green, 0, 255, 0, brightness);
-//    realBlue = map(blue, 0, 255, 0, brightness);
-//  } else {
-//    realRed = 0;
-//    realGreen = 0;
-//    realBlue = 0;
-//  }
-//  Serial.println(effect);
-//  // startFade = true;
-//  // inFade = false;     // kill current fade
-//
-//  sendState();
 }
 
 
 // bool processJson(byte* payload, unsigned int length) {
 bool processJson() {
-  // StaticJsonDocument<capacity> doc;
-  // DeserializationError err = deserializeJson(doc, callbackPayload, callbackLength);
-  // if (err){
-    // Serial.print("ERROR IN PROCESS JSON: ");
-    // Serial.println(err.c_str());
-    // return false;
-  // }
-  
+  Serial.println("process json");
   JsonObject root = doc.as<JsonObject>();
   
   // Check State
   const char* state = root["state"];
   if (state) {
-    Serial.println(state);
+    // Serial.println(state);
     // If it gets here, a state was sent
     // Check if it's on or off
     if (strcmp(root["state"], on_cmd) == 0){
@@ -260,6 +229,7 @@ bool processJson() {
   } else if(effectString == "solid") {
     transitionTime = 0;
   }
+  Serial.println("finish process json");
 }
 
 
@@ -301,7 +271,7 @@ void reconnect() {
     // Attempt to connect
     if(client.connect(SENSORNAME, mqttUsername, mqttPassword)) {
       Serial.println("connected");
-      delay(5000);
+      // delay(5000);
       Serial.print("subscribing to: ");
       Serial.println(lightSetTopic);
       client.subscribe(lightSetTopic);
@@ -343,24 +313,30 @@ void loop() {
   ArduinoOTA.handle();
 
 	if(successfulReturnFlag) {
+    successfulReturnFlag = 0;
 		processJson();
 	}
 
   // EFFECTS INFO HERE
+  // Serial.print("effect string: ");
+  // Serial.println(effectString);
 
   /*** EFFECT RAINBOW ***/
   if(effectString == "rainbow") {
     // TODO: Add brightness to this
+    // Serial.println("before rainbow increment");
     if(!properRainbowIncrement(rgbArray, NUM_LEDS)) {
       setColor((int)rgbArray[0], (int)rgbArray[1], (int)rgbArray[2]);
     } else {
-      Serial.print("RAINBOW ERROR 1");
+      Serial.println("RAINBOW ERROR 1");
     }
+    // Serial.println("after rainbow increment");
     delay(0.1);
   }
 
   /*** EFFECT RAINBOW CYCLE ***/
   if(effectString == "rainbow cycle") {
+    // Serial.println("before rainbow cycle increment");
     // TODO: Add brightness to this
     // Consider other ways to get to starting state
 
@@ -388,6 +364,10 @@ void loop() {
     delay(0.1);
     rainbowCycleLEDWrite++;
     FastLED.show();
+    // Serial.println("after rainbow cycle increment");
+    debugCtr += 1;
+    Serial.print("debug ctr: ");
+    Serial.println(debugCtr);
   }
 
   /*** EFFECT SOLID ***/
