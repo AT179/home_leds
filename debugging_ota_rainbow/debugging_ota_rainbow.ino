@@ -5,7 +5,7 @@
 #include <ArduinoJson.h>
 #include <FastLED.h>
 #include <ArduinoOTA.h>
-#include "led_effect_increment.h"
+// #include "led_effect_increment.h"
 
 /***************************** GENERIC VARIABLES ******************************/
 /************************* MICROCONTROLLER SPECIFICS **************************/
@@ -349,6 +349,33 @@ void loop() {
         setColor(255, 0, 0);
         sendState();
       }
+	
+	// New color transitions
+	// (0, 0, 1)
+	// (0, 1, 1)
+	// (0, 1, 0)
+	// (1, 1, 0)
+	// (1, 0, 0)
+	// (1, 0, 1)
+	// Start again
+	
+	// 0 - 255
+	// Scale 0 - 255 to number of LEDs
+	// numLEDs
+	// 255 / numLEDs = stepSize
+	// Note, I need to round this either up or down
+	// Why do I need to bother with step size? I can worry about that later
+
+	// What is the data format that the LEDs are written to?
+	// ex. LEDs[numLEDs][3];
+
+	// So, write all the LEDs and then show leds
+
+	// leds[i].red = (something between 0 - 255);
+	// leds[i].green = (something between 0 - 255);
+	// leds[i].blue = (something between 0 - 255);
+
+
     }
 
     // This is where the LED is actually written. One led per loop
