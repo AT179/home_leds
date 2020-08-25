@@ -230,6 +230,8 @@ bool processJson() {
     effectString = effect;
 		Serial.print("Effect string: ");
 		Serial.println(effectString);
+  } else {
+    effectString = "solid";
   }
   if(root.containsKey("transition")) {
     transitionTime = root["transition"];
