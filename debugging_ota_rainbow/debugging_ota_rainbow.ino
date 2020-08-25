@@ -54,8 +54,8 @@ const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 const int capacity = 256;
 
 // FastLED Definitions
-// #define NUM_LEDS 76    // TODO: numleds changes from deivce to device
-#define NUM_LEDS 50
+#define NUM_LEDS 76    // TODO: numleds changes from deivce to device
+/* #define NUM_LEDS 50 */
 #define DATA_PIN 5
 #define CHIPSET WS2812B
 #define COLOR_ORDER GRB
@@ -75,6 +75,8 @@ CRGB leds[NUM_LEDS];
 bool stateOn = false;
 int transitionTime = 0;
 
+// need to init
+int needToInit = 0;
 
 /**************************** HOUSEKEEPING SHARED *****************************/
 /*** my specific stuff for led rainbow ***/
@@ -176,6 +178,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
 		callbackTopic = topic;
 		callbackPayload = payload;
 		callbackLength = length;
+
+		needToInit = 1;
 		
 		successfulReturnFlag = 1;
 		return;
@@ -186,6 +190,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 // bool processJson(byte* payload, unsigned int length) {
 bool processJson() {
   Serial.println("process json");
+	needToInit = 1;
   JsonObject root = doc.as<JsonObject>();
   
   // Check State
@@ -223,6 +228,8 @@ bool processJson() {
   if(root.containsKey("effect")) {
     effect = root["effect"];
     effectString = effect;
+		Serial.print("Effect string: ");
+		Serial.println(effectString);
   }
   if(root.containsKey("transition")) {
     transitionTime = root["transition"];
@@ -321,34 +328,47 @@ void loop() {
   // Serial.print("effect string: ");
   // Serial.println(effectString);
 
-  /*** EFFECT RAINBOW ***/
-  if(effectString == "rainbow") {
-    // TODO: Add brightness to this
-    // Serial.println("before rainbow increment");
-    if(!properRainbowIncrement(rgbArray, NUM_LEDS)) {
-      setColor((int)rgbArray[0], (int)rgbArray[1], (int)rgbArray[2]);
-    } else {
-      Serial.println("RAINBOW ERROR 1");
-    }
-    // Serial.println("after rainbow increment");
-    delay(0.1);
-  }
+  /* /\*** EFFECT RAINBOW ***\/ */
+  /* if(effectString == "rainbow") { */
+	/* 	if(needToInit) { */
+	/* 		// Do any needed initilization here TODO: spelling */
+	/* 		needToInit = 0; */
+	/* 	} */
+  /*   // TODO: Add brightness to this */
+  /*   // Serial.println("before rainbow increment"); */
+  /*   if(!properRainbowIncrement(rgbArray, NUM_LEDS)) { */
+  /*     setColor((int)rgbArray[0], (int)rgbArray[1], (int)rgbArray[2]); */
+  /*   } else { */
+  /*     Serial.println("RAINBOW ERROR 1"); */
+  /*   } */
+  /*   // Serial.println("after rainbow increment"); */
+  /*   delay(0.1); */
+  /* } */
 
   /*** EFFECT RAINBOW CYCLE ***/
   if(effectString == "rainbow cycle") {
+		if(needToInit) {
+			for(int i = 0; i < NUM_LEDS; i++) {
+				leds[i].red = 255 - i;
+				leds[i].green = i;
+				leds[i].blue = 0;
+			}
+			needToInit = 0;
+		}
     // Serial.println("before rainbow cycle increment");
     // TODO: Add brightness to this
     // Consider other ways to get to starting state
 
     // Logic through this
     // If we go out of the bounds of LEDs, go back to zero. Obvious
-    if(rainbowCycleLEDWrite >= 300) {
-      rainbowCycleLEDWrite = 0;
-      if(properRainbowIncrement(rgbArray, NUM_LEDS)) {
-        Serial.print("RAINBOW CYCLE ERROR 2");
-        setColor(255, 0, 0);
-        sendState();
-      }
+    /* if(rainbowCycleLEDWrite >= 300) { */
+    /*   rainbowCycleLEDWrite = 0; */
+    /*   if(properRainbowIncrement(rgbArray, NUM_LEDS)) { */
+    /*     Serial.print("RAINBOW CYCLE ERROR 2"); */
+    /*     setColor(255, 0, 0); */
+    /*     sendState(); */
+    /*   } */
+		/* } */
 	
 	// New color transitions
 	// (0, 0, 1)
@@ -375,30 +395,73 @@ void loop() {
 	// leds[i].green = (something between 0 - 255);
 	// leds[i].blue = (something between 0 - 255);
 
+	// How am I going to do this?
+	// Pick a scheme:
+	// Options are: Low power constant ramp
+	// 		Brightest
+	// 		Sin wave
 
-    }
+	// Maybe use numLEDs to determine how many places 
+	// to go back when writing all LEDs?
 
-    // This is where the LED is actually written. One led per loop
-    if(!properRainbowIncrement(rgbArray, NUM_LEDS)) {
-      leds[rainbowCycleLEDWrite].red = (int)rgbArray[0];
-      leds[rainbowCycleLEDWrite].green = (int)rgbArray[1];
-      leds[rainbowCycleLEDWrite].blue = (int)rgbArray[2];
-    } else {
-      Serial.print("RAINBOW CYCLE ERROR 1");
-      setColor(0, 255, 0);
-      sendState();
-    }
-    delay(0.1);
-    rainbowCycleLEDWrite++;
-    FastLED.show();
-    // Serial.println("after rainbow cycle increment");
-    debugCtr += 1;
-    Serial.print("debug ctr: ");
-    Serial.println(debugCtr);
-  }
+	// It would take 765 size thing to just have an array of all possible values.
+	// It's probably better to come up with a mathmatical solution.
+
+	// If Red and Green are both non-zero or Red == 255:
+	// 	Red decreasing
+	//	Green increasing
+
+	// If Green and Blue are both non-zero or Green == 255:
+	//	Green decreasing
+	//	Blue increasing
+
+	// If Red and Blue are both non-zero or Blue == 255:
+	// 	Blue decreasing
+	// 	Red increasing
+
+
+		for(int i = 0; i < NUM_LEDS; i++) {
+			if((leds[i].red && leds[i].green) || leds[i].red == 255) {
+				leds[i].red--;
+				leds[i].green++;
+				// leds[i].blue = 0;
+			} else if((leds[i].green && leds[i].blue) || leds[i].green == 255) {
+				leds[i].green--;
+				leds[i].blue++;
+			} else if((leds[i].red && leds[i].blue) || leds[i].blue == 255) {
+				leds[i].blue--;
+				leds[i].red++;
+			} 
+		}
+		FastLED.show();
+	}
+
+  /*   // This is where the LED is actually written. One led per loop */
+  /*   if(!properRainbowIncrement(rgbArray, NUM_LEDS)) { */
+  /*     leds[rainbowCycleLEDWrite].red = (int)rgbArray[0]; */
+  /*     leds[rainbowCycleLEDWrite].green = (int)rgbArray[1]; */
+  /*     leds[rainbowCycleLEDWrite].blue = (int)rgbArray[2]; */
+  /*   } else { */
+  /*     Serial.print("RAINBOW CYCLE ERROR 1"); */
+  /*     setColor(0, 255, 0); */
+  /*     sendState(); */
+  /*   } */
+  /*   delay(0.1); */
+  /*   rainbowCycleLEDWrite++; */
+  /*   FastLED.show(); */
+  /*   // Serial.println("after rainbow cycle increment"); */
+  /*   debugCtr += 1; */
+  /*   Serial.print("debug ctr: "); */
+  /*   Serial.println(debugCtr); */
+  /* } */
+
 
   /*** EFFECT SOLID ***/
   if(effectString == "solid") {
+		if(needToInit) {
+			// AHHHHHHHHHHHHHHH
+			needToInit = 0;
+		}
     // brightness adjust
     // brightness adjust might need to be it's own function
     // Serial.println("state on true, adjusting brightness");
